@@ -45,8 +45,6 @@ class Person extends Entity
         @actions.push Object.create action, func: value: @take
         coin.actions.push action
 
-    round_counter: =>
-
     take: (action) =>
         if action.fail
             @output "#{@name or @type}: i couldn't take a #{action.what.type}"
@@ -58,8 +56,6 @@ class Coin extends Entity
 
     init: ->
         @type = 'coin'
-
-    round_announce: (world) =>
 
     round_counter: =>
         takes = []
