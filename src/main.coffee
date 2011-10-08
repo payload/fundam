@@ -8,12 +8,12 @@ class World
     play_round: =>
         for x in @stuff
             x.round_announce? this
+        for x in @stuff
+            x.round_counter?()
         next_stuff  = []
         for x in @stuff
-            if !x.round_counter?()
+            if !x.round_complete?()
                 next_stuff.push x
-        for x in @stuff
-            x.round_complete?()
         @stuff = next_stuff
 
     filter: (func) =>
@@ -30,8 +30,11 @@ class Entity
         @init?()
 
     round_complete: =>
+        remove = false
         while action = @actions.pop()
             action.func? action
+            remove = true if action.remove == true
+        remove
 
 class Person extends Entity
 
