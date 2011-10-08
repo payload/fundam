@@ -1,0 +1,4 @@
+#!/bin/sh
+cd build
+node "$1.js"
+
