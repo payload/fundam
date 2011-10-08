@@ -7,17 +7,13 @@ class World
 
     play_round: =>
         for x in @stuff
-            x.play_round @stuff
-        next_stuff = []
-        all_actions = []
+            x.round_announce? this
+        next_stuff  = []
         for x in @stuff
-            { remove, actions } = x.end_round() or {}
-            if actions
-                all_actions.push actions...
-            if !remove
+            if !x.round_counter?()
                 next_stuff.push x
-        for action in all_actions
-            action[0] action[1..]...
+        for x in @stuff
+            x.round_complete?()
         @stuff = next_stuff
 
     filter: (func) =>
@@ -25,35 +21,37 @@ class World
 
 class Entity
 
-    constructor: ->
+    constructor: (attrs) ->
         @type = 'something'
         @actions = []
+        @output = console.log
+        for attr, v of attrs
+            this[attr] = v
         @init?()
+
+    round_complete: =>
+        while action = @actions.pop()
+            action.func? action
 
 class Person extends Entity
 
     init: ->
         @type = 'person'
 
-    play_round: (world) =>
+    round_announce: (world) =>
         coins = world.filter (x) -> x.type == 'coin'
-        for coin in coins
-            action = type: 'take', who: this, what: coin
-            @actions.push action
-            coin.actions.push action
+        coin = coins[Math.floor(coins.length*Math.random())]
+        action = type: 'take', who: this, what: coin
+        @actions.push Object.create action, func: value: @take
+        coin.actions.push action
 
-    end_round: =>
-        actions = []
-        while action = @actions.pop()
-            if action.type == 'take'
-                actions.push [ @take, action ]
-        { actions }
+    round_counter: =>
 
     take: (action) =>
         if action.fail
-            console.log "#{@name or @type}: i couldn't take a #{action.what.type}"
+            @output "#{@name or @type}: i couldn't take a #{action.what.type}"
         else
-            console.log "#{@name or @type}: i took a #{action.what.type}"
+            @output "#{@name or @type}: i took a #{action.what.type}"
 
 
 class Coin extends Entity
@@ -61,40 +59,41 @@ class Coin extends Entity
     init: ->
         @type = 'coin'
 
-    play_round: (world) =>
+    round_announce: (world) =>
 
-    end_round: =>
-        actions = []
+    round_counter: =>
         takes = []
-        while action = @actions.pop()
+        for action in @actions
             if action.type == 'take'
                 takes.push action
 
         if takes.length > 1
             for take in takes
                 take.fail = true
-            action = { takes, type: 'prevent take' }
-            actions.push [ @prevent_take, action ]
-        { actions }
+            @actions.push { takes, type: 'prevent take', func: @prevent_take }
 
     prevent_take: (action) =>
-        console.log "#{@name or @type}: *evil laughter* hahahar"
+        @output "#{@name or @type}: *evil laughter* hahahar"
 
 p1 = new Person
 p2 = new Person
-coin = new Coin
+coin = new Coin name: 'coin 1'
 
 p2.name = 'other person'
 
 world = new World
 
-console.log 'setting with one person and a coin'
-world.stuff.push p1, coin
+console.log '\n# setting with one person and a coin'
+world.stuff = [p1, coin]
+world.play_round()
+
+console.log '\n# setting with two persons and a coin'
+world.stuff = [p1, p2, coin]
+world.play_round()
+
+console.log '\n# setting with two persons and two coins'
+world.stuff = [p1, p2, coin, new Coin name: 'coin 2']
 world.play_round()
 
 console.log ''
-
-console.log 'setting with two persons and a coin'
-world.stuff.push p2
-world.play_round()
 
