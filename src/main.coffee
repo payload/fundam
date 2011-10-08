@@ -16,9 +16,6 @@ class World
                 next_stuff.push x
         @stuff = next_stuff
 
-    filter: (func) =>
-        x for x in @stuff when func x
-
 class Entity
 
     constructor: (attrs) ->
@@ -42,7 +39,7 @@ class Person extends Entity
         @type = 'person'
 
     round_announce: (world) =>
-        coins = world.filter (x) -> x.type == 'coin'
+        coins = (x for x in world.stuff when x.type == 'coin')
         coin = coins[Math.floor(coins.length*Math.random())]
         action = type: 'take', who: this, what: coin
         @actions.push Object.create action, func: value: @take
