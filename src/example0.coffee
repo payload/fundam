@@ -1,22 +1,22 @@
 { World , Entity} = require 'fundams'
 
+output = console.log
+
 class Person extends Entity
 
     init: ->
         @type = 'person'
 
-    round_announce: (world) =>
+    play_round: (world) =>
         coins = (x for x in world.stuff when x.type == 'coin')
         coin = coins[Math.floor(coins.length*Math.random())]
-        action = type: 'take', who: this, what: coin
-        @actions.push Object.create action, func: value: @take
-        coin.actions.push action
+        [ { type: 'take', what: coin, who: this } ]
 
-    take: (action) =>
-        if action.fail
-            @output "#{@name or @type}: i couldn't take a #{action.what.type}"
-        else
-            @output "#{@name or @type}: i took a #{action.what.type}"
+    take_fail: (take) =>
+        output "#{@name or @type}: i couldn't take a #{take.what.type}"
+
+    take_win: (take) =>
+        output "#{@name or @type}: i took a #{take.what.type}"
 
 
 class Coin extends Entity
@@ -24,19 +24,8 @@ class Coin extends Entity
     init: ->
         @type = 'coin'
 
-    round_counter: =>
-        takes = []
-        for action in @actions
-            if action.type == 'take'
-                takes.push action
-
-        if takes.length > 1
-            for take in takes
-                take.fail = true
-            @actions.push { takes, type: 'prevent take', func: @prevent_take }
-
-    prevent_take: (action) =>
-        @output "#{@name or @type}: *evil laughter* hahahar"
+    take_fail: (take) =>
+        output "#{@name or @type}: *evil laughter* hahahar"
 
 p1 = new Person
 p2 = new Person
@@ -44,7 +33,37 @@ coin = new Coin name: 'coin 1'
 
 p2.name = 'other person'
 
-world = new World
+world = new class extends World
+
+    init: ->
+        @rules = { @take }
+
+    prepare: (announcements) =>
+        takes = []
+        for a in announcements
+            if a.type == 'take'
+                takes.push a
+        announcements.takes = takes
+
+    take: ({ takes }) =>
+        actions = []
+        taken = {}
+        for take in takes
+            (taken[take.what.id] = taken[take.what.id] or []).push take
+        for _, takes of taken
+            if takes.length > 1
+                actions.push [ @take_fail, takes... ]
+            else
+                actions.push [ @take_win, takes[0] ]
+        actions
+
+    take_fail: (takes...) =>
+        for take in takes
+            take.who.take_fail take
+        takes[0].what.take_fail take
+
+    take_win: (take) =>
+        take.who.take_win take
 
 console.log '\n# setting with one person and a coin'
 world.stuff = [p1, coin]

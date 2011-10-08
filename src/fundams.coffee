@@ -1,35 +1,34 @@
-class World
-
-    constructor: ->
-        @stuff = []
-
-    play_round: =>
-        for x in @stuff
-            x.round_announce? this
-        for x in @stuff
-            x.round_counter?()
-        next_stuff  = []
-        for x in @stuff
-            if !x.round_complete?()
-                next_stuff.push x
-        @stuff = next_stuff
+ID = 0
 
 class Entity
 
     constructor: (attrs) ->
+        @id = ID++
         @type = 'something'
-        @actions = []
-        @output = console.log
         for attr, v of attrs
             this[attr] = v
         @init?()
 
-    round_complete: =>
-        remove = false
-        while action = @actions.pop()
-            action.func? action
-            remove = true if action.remove == true
-        remove
+class World
+
+    constructor: ->
+        @stuff = {}
+        @rules = {}
+        @init?()
+
+    play_round: =>
+        announcements = []
+        for _, x of @stuff
+            a = x.play_round? this
+            announcements.push a... if a?.length
+        actions = []
+        @prepare? announcements
+        for _, rule of @rules
+            a = rule announcements
+            actions.push a... if a?.length
+        for action in actions
+            action[0] action[1..]...
+
 
 module.exports = { World, Entity }
 
