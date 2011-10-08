@@ -1,15 +1,11 @@
 SDL = require 'sdl'
 { World, Entity } = require 'fundams'
 
-p = (xs...) -> console.log xs...; xs[-1..][0]
 pick = (list) -> list[Math.floor list.length*Math.random()]
-
-NAMES = ['Alice', 'Bob', 'Claire', 'Dave', 'Elenor']
 
 class Person extends Entity
 
     init: ->
-        @name ?= pick NAMES
         @visible = true
         @color ?= 0x00A0A0FF
         @x ?= 0
