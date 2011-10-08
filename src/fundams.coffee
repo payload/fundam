@@ -11,9 +11,11 @@ class Entity
 
 class World
 
-    constructor: ->
+    constructor: (attrs) ->
         @stuff = {}
         @rules = {}
+        for attr, v of attrs
+            this[attr] = v
         @init?()
 
     play_round: =>
